@@ -7,7 +7,7 @@
 
 #define PROTOCOL_TCP
 
-bool debug = true;
+bool debug = false;
 
 #define VERSION "1.10"
 
