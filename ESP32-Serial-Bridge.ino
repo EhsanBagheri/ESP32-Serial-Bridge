@@ -122,15 +122,15 @@ void setup() {
 #endif // OTA_HANDLER    
 
   #ifdef PROTOCOL_TCP
-  COM[0]->println("Starting TCP Server 1");  
+  //COM[0]->println("Starting TCP Server 1");  
   if(debug) COM[DEBUG_COM]->println("Starting TCP Server 1");  
   server[0]->begin(); // start TCP server 
   server[0]->setNoDelay(true);
-  COM[1]->println("Starting TCP Server 2");
+  //COM[1]->println("Starting TCP Server 2");
   if(debug) COM[DEBUG_COM]->println("Starting TCP Server 2");  
   server[1]->begin(); // start TCP server 
   server[1]->setNoDelay(true);
-  COM[2]->println("Starting TCP Server 3");
+  //COM[2]->println("Starting TCP Server 3");
   if(debug) COM[DEBUG_COM]->println("Starting TCP Server 3");  
   server[2]->begin(); // start TCP server   
   server[2]->setNoDelay(true);
@@ -146,20 +146,7 @@ void loop()
   ArduinoOTA.handle();
 #endif // OTA_HANDLER
   
-#ifdef BLUETOOTH
-  // receive from Bluetooth:
-  if(SerialBT.hasClient()) 
-  {
-    while(SerialBT.available())
-    {
-      BTbuf[iBT] = SerialBT.read(); // read char from client (LK8000 app)
-      if(iBT <bufferSize-1) iBT++;
-    }          
-    for(int num= 0; num < NUM_COM ; num++)
-      COM[num]->write(BTbuf,iBT); // now send to UART(num):          
-    iBT = 0;
-  }  
-#endif  
+
 #ifdef PROTOCOL_TCP
   for(int num= 0; num < NUM_COM ; num++)
   {
@@ -182,9 +169,8 @@ void loop()
     }
   }
 #endif
- 
-  for(int num= 0; num < NUM_COM ; num++)
-  {
+/*       COM0 --> 192.168.4.1:8880       */ 
+	  int num=0;
     if(COM[num] != NULL)          
     {
       for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
@@ -215,13 +201,30 @@ void loop()
           if(TCPClient[num][cln])                     
             TCPClient[num][cln].write(buf2[num], i2[num]);
         }
-#ifdef BLUETOOTH        
-        // now send to Bluetooth:
-        if(SerialBT.hasClient())      
-          SerialBT.write(buf2[num], i2[num]);               
-#endif  
         i2[num] = 0;
       }
     }    
-  }
+
+  
+  
+/*       COM1 --> 192.168.4.1:8881       */   
+    num=1;
+    if(COM[num] != NULL)          
+    {
+      for(byte cln = 0; cln < MAX_NMEA_CLIENTS; cln++)
+      {               
+        if(TCPClient[num][cln]) 
+        {
+          while(TCPClient[num][cln].available())
+          {
+            buf1[num][i1[num]] = TCPClient[num][cln].read(); // read char from client (LK8000 app)
+            if(i1[num]<bufferSize-1) i1[num]++;
+          } 
+          buf1[num][i1[num]]=0x00;
+          COM[num]->write(buf1[num], i1[num]); // now send to UART(num):
+          i1[num] = 0;
+        }
+      }
+    }    
+
 }
