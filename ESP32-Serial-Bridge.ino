@@ -38,7 +38,7 @@ WiFiClient TCPClient[NUM_COM][MAX_NMEA_CLIENTS];
 #endif
 
 
-uint8_t buf1[NUM_COM][bufferSize];
+char buf1[NUM_COM][bufferSize];
 uint16_t i1[NUM_COM]={0,0,0};
 
 uint8_t buf2[NUM_COM][bufferSize];
@@ -46,13 +46,14 @@ uint16_t i2[NUM_COM]={0,0,0};
 
 uint8_t BTbuf[bufferSize];
 uint16_t iBT =0;
-
+uint16_t BaudRate = 38400;
+char Str[10];
 
 void setup() {
 
   delay(500);
   
-  COM[0]->begin(UART_BAUD0, SERIAL_PARAM0, SERIAL0_RXPIN, SERIAL0_TXPIN);
+  COM[0]->begin(UART_BAUD0);
   COM[1]->begin(UART_BAUD1, SERIAL_PARAM1, SERIAL1_RXPIN, SERIAL1_TXPIN);
   COM[2]->begin(UART_BAUD2, SERIAL_PARAM2, SERIAL2_RXPIN, SERIAL2_TXPIN);
   
@@ -221,7 +222,31 @@ void loop()
             if(i1[num]<bufferSize-1) i1[num]++;
           } 
           buf1[num][i1[num]]=0x00;
-          COM[num]->write(buf1[num], i1[num]); // now send to UART(num):
+          
+          char * Search = strstr(buf1[num] , "*Baud*");
+          if (Search != NULL) {
+              Search = NULL;
+              
+              for(char i=0;i<6;i++){
+                Str[i]=buf1[num][i+6];
+              }
+              Str[6]=NULL;
+              BaudRate = atoi(Str);
+              //Serial.println(BaudRate);
+              //client.print("Baudrate :");
+              //client.print(BaudRate);
+              if(TCPClient[num][cln]){                     
+                 TCPClient[num][cln].write("BaudRate changed", 16);
+              }
+              COM[0]-> flush();
+              delay(2);
+              COM[0]-> end();
+              delay(10);
+              COM[0]-> begin(BaudRate);
+              buf1[num][0] = 0;
+              buf1[num][1] = 0;
+              buf1[num][2] = 0;
+            }
           i1[num] = 0;
         }
       }
